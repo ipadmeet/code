@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code学習</title>
+<style>
+body {
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ccc;
+  padding: 8px 12px;
+  position: relative;
+}
+
+/* 戻る・進むボタン（小さめ長方形） */
+#undoRedo button {
+  background-color: #007AFF;
+  color: white;
+  border: none;
+  font-size: 1em;
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-right: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.1s, box-shadow 0.2s;
+  cursor: pointer;
+}
+#undoRedo button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+#redoBtn {
+  background-color: #28A745; /* 緑 */
+}
+#undoRedo button:disabled {
+  background-color: #aaa;
+  color: #eee;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* タイトル中央寄せ */
+header .title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+/* メインレイアウト */
+main {
+  flex: 1;
+  display: flex;
+  height: 100%;
+}
+#editorContainer, #previewContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+#editorContainer {
+  border-right: 1px solid #ccc;
+}
+#editor {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: monospace;
+  padding: 10px;
+  resize: none;
+  border: none;
+  outline: none;
+}
+iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div id="undoRedo">
+    <button id="undoBtn" title="元に戻す">⤺ 戻る</button>
+    <button id="redoBtn" title="やり直す">進む ⤻</button>
+  </div>
+  <div class="title">HTMLエディタ＆プレビュー</div>
+</header>
+
+<main>
+  <div id="editorContainer">
+    <textarea id="editor"><!DOCTYPE html>
+<html>
+<body>
+  <h1>Hello, World!</h1>
+  <p>このエディタで編集すると右側にリアルタイムで反映されます。</p>
+</body>
+</html></textarea>
+  </div>
+  <div id="previewContainer">
+    <iframe id="preview"></iframe>
+  </div>
+</main>
+
+<script>
+const editor = document.getElementById("editor");
+const preview = document.getElementById("preview");
+const undoBtn = document.getElementById("undoBtn");
+const redoBtn = document.getElementById("redoBtn");
+
+let history = [];
+let index = -1;
+
+// 履歴に保存
+function saveToHistory() {
+  const current = editor.value;
+  if (history[index] !== current) {
+    history = history.slice(0, index + 1);
+    history.push(current);
+    index = history.length - 1;
+    updateButtons();
+    localStorage.setItem("savedHTML", current);
+  }
+}
+
+// Undo / Redo
+function undo() {
+  if (index > 0) {
+    index--;
+    editor.value = history[index];
+    updateButtons();
+    updatePreview();
+  }
+}
+function redo() {
+  if (index < history.length - 1) {
+    index++;
+    editor.value = history[index];
+    updateButtons();
+    updatePreview();
+  }
+}
+function updateButtons() {
+  undoBtn.disabled = index <= 0;
+  redoBtn.disabled = index >= history.length - 1;
+}
+
+// プレビュー更新
+function updatePreview() {
+  preview.srcdoc = editor.value;
+}
+
+// 初期化
+window.onload = () => {
+  const saved = localStorage.getItem("savedHTML");
+  if (saved) editor.value = saved;
+  saveToHistory();
+  updatePreview();
+};
+
+// 入力時
+let typingTimer;
+editor.addEventListener("input", () => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    saveToHistory();
+    updatePreview();
+  }, 300);
+});
+
+// Undo / Redoボタン
+undoBtn.onclick = undo;
+redoBtn.onclick = redo;
+</script>
+
+</body>
+</html>
