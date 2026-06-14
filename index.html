@@ -22,26 +22,26 @@ header {
   position: relative;
 }
 
-/* 戻る・進むボタン（小さめ長方形） */
-#undoRedo button {
-  background-color: #007AFF;
+/* ボタンの基本スタイル（共通化） */
+#undoRedo button, #resetBtn {
   color: white;
   border: none;
   font-size: 1em;
   padding: 6px 12px;
   border-radius: 4px;
-  margin-right: 6px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  transition: transform 0.1s, box-shadow 0.2s;
+  transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
   cursor: pointer;
 }
-#undoRedo button:hover {
+#undoRedo button:hover, #resetBtn:hover, #shareBtn:hover {
   transform: scale(1.05);
   box-shadow: 0 3px 6px rgba(0,0,0,0.25);
 }
-#redoBtn {
-  background-color: #28A745; /* 緑 */
-}
+
+#undoBtn { background-color: #007AFF; margin-right: 6px; }
+#redoBtn { background-color: #28A745; margin-right: 12px; } /* リセットとの間に少し隙間 */
+#resetBtn { background-color: #DC3545; } /* 赤色 */
+
 #undoRedo button:disabled {
   background-color: #aaa;
   color: #eee;
@@ -71,10 +71,6 @@ header .title {
   transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
   cursor: pointer;
   z-index: 10; /* 中央のタイトルと重なった時の前面確保 */
-}
-#shareBtn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
 }
 #shareBtn.copied {
   background-color: #5856D6; /* コピー成功時はパープルに変化 */
@@ -118,6 +114,7 @@ iframe {
   <div id="undoRedo">
     <button id="undoBtn" title="元に戻す">⤺ 戻る</button>
     <button id="redoBtn" title="やり直す">進む ⤻</button>
+    <button id="resetBtn" title="コードを全消しする">🗑 全消し</button>
   </div>
   <div class="title">HTMLエディタ＆プレビュー</div>
   <button id="shareBtn" title="HTMLをクリップボードにコピー">🔗 HTMLを共有</button>
@@ -143,6 +140,7 @@ const editor = document.getElementById("editor");
 const preview = document.getElementById("preview");
 const undoBtn = document.getElementById("undoBtn");
 const redoBtn = document.getElementById("redoBtn");
+const resetBtn = document.getElementById("resetBtn"); // リセットボタンの取得
 const shareBtn = document.getElementById("shareBtn"); // 共有ボタンの取得
 
 let history = [];
@@ -187,6 +185,17 @@ function updatePreview() {
   preview.srcdoc = editor.value;
 }
 
+// 全消し（リセット）処理
+function resetCode() {
+  // 確認ダイアログを出す（不要な場合は if 文を外して中身だけにしてください）
+  if (confirm("エディタのコードをすべて削除しますか？")) {
+    editor.value = "";          // エディタを空にする
+    saveToHistory();            // 履歴に保存（「戻る」で復活可能にするため）
+    updatePreview();            // プレビューも空にする
+    localStorage.removeItem("savedHTML"); // ローカルストレージもクリア
+  }
+}
+
 // クリップボードへのコピー処理
 async function copyToClipboard() {
   try {
@@ -201,6 +210,7 @@ async function copyToClipboard() {
     // 2秒後に元の状態に戻す
     setTimeout(() => {
       shareBtn.textContent = "🔗 HTMLを共有";
+      shareBtn.classList.remove("remove");
       shareBtn.classList.remove("copied");
       shareBtn.disabled = false;
     }, 2000);
@@ -232,6 +242,7 @@ editor.addEventListener("input", () => {
 // 各種ボタンのイベント紐付け
 undoBtn.onclick = undo;
 redoBtn.onclick = redo;
+resetBtn.onclick = resetCode; // リセットボタンクリック時
 shareBtn.onclick = copyToClipboard; // 共有ボタンクリック時
 </script>
 
